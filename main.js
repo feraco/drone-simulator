@@ -17,7 +17,7 @@ const droneState = {
     position: new THREE.Vector3(0, 5, 0),
     rotation: new THREE.Euler(0, 0, 0),
     velocity: new THREE.Vector3(0, 0, 0),
-    rotationVelocity: new THREE.Euler(0, 0, 0),
+    rotationVelocity: new THREE.Vector3(0, 0, 0),
     propellerRotation: 0,
     beginnerMode: false,
     mouseX: 0,

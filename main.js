@@ -35,7 +35,9 @@ const droneState = {
     pressure: 1013.25, // hPa
     windSpeed: new THREE.Vector3(0, 0, 0),
     gForce: new THREE.Vector3(0, 0, 0),
-    angularVelocity: new THREE.Vector3(0, 0, 0)
+    angularVelocity: new THREE.Vector3(0, 0, 0),
+    isHovering: true, // Start in hover mode
+    hoverThrust: 0.098 // Thrust needed to counteract gravity
 };
 
 // Mouse lock and movement handling
@@ -293,6 +295,7 @@ const DRAG = 0.92;  // Air resistance
 const PROPELLER_SPEED = 0.5;
 const GRAVITY = new THREE.Vector3(0, -0.098, 0); // 9.8 m/s² scaled down
 const AIR_DENSITY = 1.225; // kg/m³ at sea level
+const GROUND_LEVEL = 0.5; // Ground collision level
 
 // Function to stop all movement
 function resetVelocities() {
@@ -384,6 +387,9 @@ function animate() {
     droneState.currentThrust = 0;
     droneState.motorSpeeds = [0, 0, 0, 0];
 
+    // Auto-hover when no input (helps with stability)
+    let hasInput = false;
+
     // Update drone physics based on mode
     if (droneState.beginnerMode) {
         // Calculate target rotations with full range of motion
@@ -405,6 +411,7 @@ function animate() {
             droneState.velocity.add(thrustForce);
             droneState.currentThrust = THRUST;
             droneState.motorSpeeds = [3000, 3000, 3000, 3000]; // RPM
+            hasInput = true;
         }
     } else {
         // Normal mode controls
@@ -413,24 +420,28 @@ function animate() {
             droneState.currentThrust += THRUST * 0.5;
             droneState.motorSpeeds[0] += 1500;
             droneState.motorSpeeds[1] += 1500;
+            hasInput = true;
         }
         if (keys.s) {
             droneState.velocity.z += Math.cos(droneState.rotation.y) * THRUST;
             droneState.currentThrust += THRUST * 0.5;
             droneState.motorSpeeds[2] += 1500;
             droneState.motorSpeeds[3] += 1500;
+            hasInput = true;
         }
         if (keys.a) {
             droneState.velocity.x -= THRUST;
             droneState.currentThrust += THRUST * 0.3;
             droneState.motorSpeeds[1] += 1000;
             droneState.motorSpeeds[3] += 1000;
+            hasInput = true;
         }
         if (keys.d) {
             droneState.velocity.x += THRUST;
             droneState.currentThrust += THRUST * 0.3;
             droneState.motorSpeeds[0] += 1000;
             droneState.motorSpeeds[2] += 1000;
+            hasInput = true;
         }
         if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
         if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
@@ -441,10 +452,12 @@ function animate() {
         droneState.velocity.y += THRUST;
         droneState.currentThrust += THRUST;
         droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);
+        hasInput = true;
     }
     if (keys.Shift) {
         droneState.velocity.y -= THRUST * 0.5;
         droneState.motorSpeeds = droneState.motorSpeeds.map(speed => Math.max(0, speed - 1000));
+        hasInput = true;
     }
     
     // Apply gravity
@@ -457,6 +470,16 @@ function animate() {
     // Calculate and apply lift
     const liftForce = calculateLift(droneState.velocity, droneState.rotation);
     droneState.velocity.add(liftForce);
+    
+    // Ground collision detection
+    if (droneState.position.y <= GROUND_LEVEL) {
+        droneState.position.y = GROUND_LEVEL;
+        droneState.velocity.y = Math.max(0, droneState.velocity.y); // Stop downward velocity
+        
+        // Add some bounce/damping when hitting ground
+        droneState.velocity.multiplyScalar(0.3);
+        droneState.rotationVelocity.multiplyScalar(0.5);
+    }
     
     // Simulate battery drain
     const totalMotorLoad = droneState.motorSpeeds.reduce((sum, speed) => sum + speed, 0);
@@ -544,6 +567,13 @@ function animate() {
   
   
    
+    // Auto-hover: Apply counter-gravity thrust when no input
+    if (!hasInput && droneState.position.y > GROUND_LEVEL + 1) {
+        droneState.velocity.y += droneState.hoverThrust;
+        droneState.currentThrust += droneState.hoverThrust;
+        droneState.motorSpeeds = [2000, 2000, 2000, 2000]; // Hover RPM
+    }
+    
 
     // Check for ring collisions and update timer
     rings.forEach((ring, i) => {

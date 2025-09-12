@@ -87,11 +87,176 @@
             top: 50%;
             transform: translateY(-50%);
         }
+        #physics-hud {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-width: 600px;
+            border: 2px solid #00ff00;
+        }
+        #physics-hud h3 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .hud-section {
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 30px;
+            min-width: 150px;
+        }
+        .hud-section h4 {
+            margin: 0 0 8px 0;
+            color: #ffff00;
+            border-bottom: 1px solid #ffff00;
+            padding-bottom: 2px;
+        }
+        .hud-value {
+            margin: 3px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .hud-label {
+            color: #cccccc;
+        }
+        .hud-number {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff6600 !important;
+        }
+        .danger {
+            color: #ff0000 !important;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        #attitude-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            background: radial-gradient(circle, #001122 0%, #000066 100%);
+            overflow: hidden;
+        }
+        #horizon-line {
+            position: absolute;
+            width: 200px;
+            height: 2px;
+            background: #ffff00;
+            left: 50%;
+            top: 50%;
+            transform-origin: center;
+            transform: translateX(-50%) translateY(-50%);
+        }
+        #aircraft-symbol {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%) translateY(-50%);
+            color: #ff0000;
+            font-size: 20px;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
     <div id="error-display"></div>
     <div id="crosshair"></div>
+    <div id="physics-hud">
+        <h3>Flight Data Computer</h3>
+        <div class="hud-section">
+            <h4>Position</h4>
+            <div class="hud-value">
+                <span class="hud-label">X:</span>
+                <span class="hud-number" id="pos-x">0.0</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Y:</span>
+                <span class="hud-number" id="pos-y">0.0</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Z:</span>
+                <span class="hud-number" id="pos-z">0.0</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Alt:</span>
+                <span class="hud-number" id="altitude">0.0m</span>
+            </div>
+        </div>
+        <div class="hud-section">
+            <h4>Velocity</h4>
+            <div class="hud-value">
+                <span class="hud-label">Speed:</span>
+                <span class="hud-number" id="speed">0.0 m/s</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">V-X:</span>
+                <span class="hud-number" id="vel-x">0.0</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">V-Y:</span>
+                <span class="hud-number" id="vel-y">0.0</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">V-Z:</span>
+                <span class="hud-number" id="vel-z">0.0</span>
+            </div>
+        </div>
+        <div class="hud-section">
+            <h4>Attitude</h4>
+            <div class="hud-value">
+                <span class="hud-label">Pitch:</span>
+                <span class="hud-number" id="pitch">0.0°</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Yaw:</span>
+                <span class="hud-number" id="yaw">0.0°</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Roll:</span>
+                <span class="hud-number" id="roll">0.0°</span>
+            </div>
+        </div>
+        <div class="hud-section">
+            <h4>Forces</h4>
+            <div class="hud-value">
+                <span class="hud-label">Thrust:</span>
+                <span class="hud-number" id="thrust">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Drag:</span>
+                <span class="hud-number" id="drag">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Lift:</span>
+                <span class="hud-number" id="lift">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">Weight:</span>
+                <span class="hud-number" id="weight">19.6 N</span>
+            </div>
+        </div>
+    </div>
+    <div id="attitude-indicator">
+        <div id="horizon-line"></div>
+        <div id="aircraft-symbol">✈</div>
+    </div>
     <div id="timer">Time: 0.0s</div>
     <div id="mode-display">Normal Mode</div>
     <div id="controls">
@@ -108,6 +273,9 @@
         <p>ESC - Release mouse</p>
         <p>Space - Up</p>
         <p>Shift - Down</p>
+        <p><strong>Physics:</strong></p>
+        <p>Mass: 2kg | Gravity: 9.8m/s²</p>
+        <p>Max Thrust: 30N per motor</p>
     </div>
     <script>
         window.onerror = function(msg, url, line, col, error) {

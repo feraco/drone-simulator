@@ -21,7 +21,21 @@ const droneState = {
     propellerRotation: 0,
     beginnerMode: false,
     mouseX: 0,
-    mouseY: 0
+    mouseY: 0,
+    // Physics properties
+    mass: 2.0, // kg
+    gravity: 9.8, // m/s²
+    maxThrust: 30.0, // N per motor (4 motors total)
+    dragCoefficient: 0.1,
+    liftCoefficient: 0.05,
+    currentThrust: 0,
+    motorSpeeds: [0, 0, 0, 0], // RPM for each motor
+    batteryLevel: 100, // percentage
+    temperature: 25, // Celsius
+    pressure: 1013.25, // hPa
+    windSpeed: new THREE.Vector3(0, 0, 0),
+    gForce: new THREE.Vector3(0, 0, 0),
+    angularVelocity: new THREE.Vector3(0, 0, 0)
 };
 
 // Mouse lock and movement handling
@@ -273,20 +287,102 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => keys[e.key] = false);
 
 // Physics constants
-const THRUST = 0.015;
+const THRUST = 0.02;
 const ROTATION_SPEED = 0.05;
-const DRAG = 0.90;  // Increased drag to reduce drifting
+const DRAG = 0.92;  // Air resistance
 const PROPELLER_SPEED = 0.5;
+const GRAVITY = new THREE.Vector3(0, -0.098, 0); // 9.8 m/s² scaled down
+const AIR_DENSITY = 1.225; // kg/m³ at sea level
 
 // Function to stop all movement
 function resetVelocities() {
     droneState.velocity.set(0, 0, 0);
     droneState.rotationVelocity.set(0, 0, 0);
+    droneState.currentThrust = 0;
+    droneState.motorSpeeds = [0, 0, 0, 0];
+}
+
+// Physics calculation functions
+function calculateDrag(velocity) {
+    const speed = velocity.length();
+    const dragMagnitude = 0.5 * AIR_DENSITY * droneState.dragCoefficient * speed * speed;
+    const dragForce = velocity.clone().normalize().multiplyScalar(-dragMagnitude * 0.001);
+    return dragForce;
+}
+
+function calculateLift(velocity, rotation) {
+    // Simplified lift calculation based on forward velocity and pitch
+    const forwardSpeed = Math.abs(velocity.z);
+    const pitchAngle = rotation.x;
+    const liftMagnitude = 0.5 * AIR_DENSITY * droneState.liftCoefficient * forwardSpeed * Math.sin(pitchAngle);
+    return new THREE.Vector3(0, liftMagnitude * 0.001, 0);
+}
+
+function updatePhysicsHUD() {
+    // Position
+    document.getElementById('pos-x').textContent = droneState.position.x.toFixed(1);
+    document.getElementById('pos-y').textContent = droneState.position.y.toFixed(1);
+    document.getElementById('pos-z').textContent = droneState.position.z.toFixed(1);
+    document.getElementById('altitude').textContent = Math.max(0, droneState.position.y).toFixed(1) + 'm';
+    
+    // Velocity
+    const speed = droneState.velocity.length() * 60; // Convert to more realistic scale
+    document.getElementById('speed').textContent = speed.toFixed(1) + ' m/s';
+    document.getElementById('vel-x').textContent = (droneState.velocity.x * 60).toFixed(2);
+    document.getElementById('vel-y').textContent = (droneState.velocity.y * 60).toFixed(2);
+    document.getElementById('vel-z').textContent = (droneState.velocity.z * 60).toFixed(2);
+    
+    // Attitude (convert radians to degrees)
+    const pitch = (droneState.rotation.x * 180 / Math.PI);
+    const yaw = (droneState.rotation.y * 180 / Math.PI);
+    const roll = (droneState.rotation.z * 180 / Math.PI);
+    
+    document.getElementById('pitch').textContent = pitch.toFixed(1) + '°';
+    document.getElementById('yaw').textContent = yaw.toFixed(1) + '°';
+    document.getElementById('roll').textContent = roll.toFixed(1) + '°';
+    
+    // Forces
+    document.getElementById('thrust').textContent = (droneState.currentThrust * 1000).toFixed(1) + ' N';
+    
+    const dragForce = calculateDrag(droneState.velocity);
+    document.getElementById('drag').textContent = (dragForce.length() * 1000).toFixed(1) + ' N';
+    
+    const liftForce = calculateLift(droneState.velocity, droneState.rotation);
+    document.getElementById('lift').textContent = (liftForce.y * 1000).toFixed(1) + ' N';
+    
+    // Update attitude indicator
+    const horizonLine = document.getElementById('horizon-line');
+    if (horizonLine) {
+        horizonLine.style.transform = `translateX(-50%) translateY(-50%) rotate(${-roll}deg) translateY(${pitch * 2}px)`;
+    }
+    
+    // Color coding for warnings
+    const speedElement = document.getElementById('speed');
+    if (speed > 15) {
+        speedElement.className = 'hud-number danger';
+    } else if (speed > 10) {
+        speedElement.className = 'hud-number warning';
+    } else {
+        speedElement.className = 'hud-number';
+    }
+    
+    const altElement = document.getElementById('altitude');
+    if (droneState.position.y < 1) {
+        altElement.className = 'hud-number danger';
+    } else if (droneState.position.y < 3) {
+        altElement.className = 'hud-number warning';
+    } else {
+        altElement.className = 'hud-number';
+    }
 }
 
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Reset thrust for this frame
+    droneState.currentThrust = 0;
+    droneState.motorSpeeds = [0, 0, 0, 0];
 
     // Update drone physics based on mode
     if (droneState.beginnerMode) {
@@ -305,21 +401,74 @@ function animate() {
         if (keys.w) {
             const direction = new THREE.Vector3(0, 0, -1);
             direction.applyEuler(droneState.rotation);
-            droneState.velocity.add(direction.multiplyScalar(THRUST));
+            const thrustForce = direction.multiplyScalar(THRUST);
+            droneState.velocity.add(thrustForce);
+            droneState.currentThrust = THRUST;
+            droneState.motorSpeeds = [3000, 3000, 3000, 3000]; // RPM
         }
     } else {
         // Normal mode controls
-        if (keys.w) droneState.velocity.z -= Math.cos(droneState.rotation.y) * THRUST;
-        if (keys.s) droneState.velocity.z += Math.cos(droneState.rotation.y) * THRUST;
-        if (keys.a) droneState.velocity.x -= THRUST;  // Move left
-        if (keys.d) droneState.velocity.x += THRUST;  // Move right
+        if (keys.w) {
+            droneState.velocity.z -= Math.cos(droneState.rotation.y) * THRUST;
+            droneState.currentThrust += THRUST * 0.5;
+            droneState.motorSpeeds[0] += 1500;
+            droneState.motorSpeeds[1] += 1500;
+        }
+        if (keys.s) {
+            droneState.velocity.z += Math.cos(droneState.rotation.y) * THRUST;
+            droneState.currentThrust += THRUST * 0.5;
+            droneState.motorSpeeds[2] += 1500;
+            droneState.motorSpeeds[3] += 1500;
+        }
+        if (keys.a) {
+            droneState.velocity.x -= THRUST;
+            droneState.currentThrust += THRUST * 0.3;
+            droneState.motorSpeeds[1] += 1000;
+            droneState.motorSpeeds[3] += 1000;
+        }
+        if (keys.d) {
+            droneState.velocity.x += THRUST;
+            droneState.currentThrust += THRUST * 0.3;
+            droneState.motorSpeeds[0] += 1000;
+            droneState.motorSpeeds[2] += 1000;
+        }
         if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
         if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
     }
 
     // Vertical controls work the same in both modes
-    if (keys[' ']) droneState.velocity.y += THRUST;
-    if (keys.Shift) droneState.velocity.y -= THRUST;
+    if (keys[' ']) {
+        droneState.velocity.y += THRUST;
+        droneState.currentThrust += THRUST;
+        droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);
+    }
+    if (keys.Shift) {
+        droneState.velocity.y -= THRUST * 0.5;
+        droneState.motorSpeeds = droneState.motorSpeeds.map(speed => Math.max(0, speed - 1000));
+    }
+    
+    // Apply gravity
+    droneState.velocity.add(GRAVITY);
+    
+    // Calculate and apply drag
+    const dragForce = calculateDrag(droneState.velocity);
+    droneState.velocity.add(dragForce);
+    
+    // Calculate and apply lift
+    const liftForce = calculateLift(droneState.velocity, droneState.rotation);
+    droneState.velocity.add(liftForce);
+    
+    // Simulate battery drain
+    const totalMotorLoad = droneState.motorSpeeds.reduce((sum, speed) => sum + speed, 0);
+    droneState.batteryLevel -= totalMotorLoad * 0.000001;
+    droneState.batteryLevel = Math.max(0, droneState.batteryLevel);
+    
+    // Update temperature based on motor usage
+    droneState.temperature = 25 + (totalMotorLoad * 0.00001);
+    
+    // Calculate G-forces
+    const prevVelocity = droneState.velocity.clone();
+    droneState.gForce.copy(droneState.velocity).sub(prevVelocity).multiplyScalar(60); // Approximate G-force
 
     // Update motion trail
     const positions = trail.geometry.attributes.position.array;
@@ -366,6 +515,9 @@ function animate() {
     // Update drone position and rotation
     droneBody.position.copy(droneState.position);
     droneBody.rotation.copy(droneState.rotation);
+    
+    // Update physics HUD
+    updatePhysicsHUD();
 
     // Update camera position based on mode
     if (droneState.beginnerMode) {

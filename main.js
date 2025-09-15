@@ -307,6 +307,18 @@ const GRAVITY = new THREE.Vector3(0, -0.098, 0); // 9.8 m/s² scaled down
 const AIR_DENSITY = 1.225; // kg/m³ at sea level
 const GROUND_LEVEL = 0.5; // Ground collision level
 
+// Thrust multiplier (can be adjusted by user)
+let thrustMultiplier = 1.0;
+
+// Setup thrust control slider
+const thrustSlider = document.getElementById('thrust-slider');
+const thrustValue = document.getElementById('thrust-value');
+
+thrustSlider.addEventListener('input', (e) => {
+    thrustMultiplier = parseFloat(e.target.value);
+    thrustValue.textContent = thrustMultiplier.toFixed(1) + 'x';
+});
+
 // Function to stop all movement
 function resetVelocities() {
     droneState.velocity.set(0, 0, 0);
@@ -417,38 +429,38 @@ function animate() {
         if (keys.w) {
             const direction = new THREE.Vector3(0, 0, -1);
             direction.applyEuler(droneState.rotation);
-            const thrustForce = direction.multiplyScalar(THRUST);
+            const thrustForce = direction.multiplyScalar(THRUST * thrustMultiplier);
             droneState.velocity.add(thrustForce);
-            droneState.currentThrust = THRUST;
+            droneState.currentThrust = THRUST * thrustMultiplier;
             droneState.motorSpeeds = [3000, 3000, 3000, 3000]; // RPM
             hasInput = true;
         }
     } else {
         // Normal mode controls
         if (keys.w) {
-            droneState.velocity.z -= Math.cos(droneState.rotation.y) * THRUST;
-            droneState.currentThrust += THRUST * 0.5;
+            droneState.velocity.z -= Math.cos(droneState.rotation.y) * THRUST * thrustMultiplier;
+            droneState.currentThrust += THRUST * thrustMultiplier * 0.5;
             droneState.motorSpeeds[0] += 1500;
             droneState.motorSpeeds[1] += 1500;
             hasInput = true;
         }
         if (keys.s) {
-            droneState.velocity.z += Math.cos(droneState.rotation.y) * THRUST;
-            droneState.currentThrust += THRUST * 0.5;
+            droneState.velocity.z += Math.cos(droneState.rotation.y) * THRUST * thrustMultiplier;
+            droneState.currentThrust += THRUST * thrustMultiplier * 0.5;
             droneState.motorSpeeds[2] += 1500;
             droneState.motorSpeeds[3] += 1500;
             hasInput = true;
         }
         if (keys.a) {
-            droneState.velocity.x -= THRUST;
-            droneState.currentThrust += THRUST * 0.3;
+            droneState.velocity.x -= THRUST * thrustMultiplier;
+            droneState.currentThrust += THRUST * thrustMultiplier * 0.3;
             droneState.motorSpeeds[1] += 1000;
             droneState.motorSpeeds[3] += 1000;
             hasInput = true;
         }
         if (keys.d) {
-            droneState.velocity.x += THRUST;
-            droneState.currentThrust += THRUST * 0.3;
+            droneState.velocity.x += THRUST * thrustMultiplier;
+            droneState.currentThrust += THRUST * thrustMultiplier * 0.3;
             droneState.motorSpeeds[0] += 1000;
             droneState.motorSpeeds[2] += 1000;
             hasInput = true;
@@ -459,13 +471,13 @@ function animate() {
 
     // Vertical controls work the same in both modes
     if (keys.Space) {
-        droneState.velocity.y += THRUST;
-        droneState.currentThrust += THRUST;
+        droneState.velocity.y += THRUST * thrustMultiplier * 5;
+        droneState.currentThrust += THRUST * thrustMultiplier * 5;
         droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);
         hasInput = true;
     }
     if (keys.Shift) {
-        droneState.velocity.y -= THRUST * 0.5;
+        droneState.velocity.y -= THRUST * thrustMultiplier * 0.5;
         droneState.motorSpeeds = droneState.motorSpeeds.map(speed => Math.max(0, speed - 1000));
         hasInput = true;
     }

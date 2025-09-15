@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 // Scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+scene.background = new THREE.Color(0xADD8E6); // Light blue sky background
 
 // Add fog for depth perception
-scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
+scene.fog = new THREE.FogExp2(0xADD8E6, 0.01);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -160,7 +160,7 @@ let trailIndex = 0;
 // Create environment
 const groundGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
 const groundMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0x8B4513,
+    color: 0x228B22, // Forest green ground
     wireframe: false,
     side: THREE.DoubleSide,
     shininess: 10,
@@ -449,102 +449,105 @@ function animate() {
     droneState.motorSpeeds = [0, 0, 0, 0];
     droneState.totalThrust = 0;
 
-    // Apply hover mode first (before other controls)
-    if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
-        const hoverThrustPerMotor = droneState.weight / 4; // 4.9N per motor
-        droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
-        droneState.totalThrust = droneState.weight;
-        droneState.velocity.y += droneState.weight * PHYSICS_SCALE;
-        droneState.motorSpeeds = [2000, 2000, 2000, 2000];
-    }
+    // Only allow thrust if battery has charge
+    if (droneState.batteryLevel > 0) {
+        // Apply hover mode first (before other controls)
+        if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1) {
+            const hoverThrustPerMotor = droneState.weight / 4; // 4.9N per motor
+            droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
+            droneState.totalThrust = droneState.weight;
+            droneState.velocity.y += droneState.weight * PHYSICS_SCALE;
+            droneState.motorSpeeds = [2000, 2000, 2000, 2000];
+        }
 
-    let hasInput = false;
+        let hasInput = false;
 
-    // Update drone physics based on mode
-    if (droneState.beginnerMode) {
-        // Calculate target rotations with full range of motion
-        const targetRotationX = droneState.mouseY * Math.PI;  // Full range pitch
-        const targetRotationY = droneState.mouseX * Math.PI * 2;  // Full 360-degree yaw
-        
-        // Smoothly rotate the drone to face mouse position
-        droneState.rotation.x = targetRotationX;
-        droneState.rotation.y = targetRotationY;
-        
-        // Allow some banking for more dynamic movement
-        droneState.rotation.z = -droneState.mouseX * 0.5;  // Bank slightly in turns
-        
-        // W key controls throttle in beginner mode - moves in direction of crosshair
-        if (keys.w) {
-            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier;
-            droneState.motorThrusts = [thrustPerMotor, thrustPerMotor, thrustPerMotor, thrustPerMotor];
-            droneState.totalThrust = thrustPerMotor * 4;
+        // Update drone physics based on mode
+        if (droneState.beginnerMode) {
+            // Calculate target rotations with full range of motion
+            const targetRotationX = droneState.mouseY * Math.PI;  // Full range pitch
+            const targetRotationY = droneState.mouseX * Math.PI * 2;  // Full 360-degree yaw
             
-            const direction = new THREE.Vector3(0, 0, -1);
-            direction.applyEuler(droneState.rotation);
-            const thrustForce = direction.multiplyScalar(droneState.totalThrust * PHYSICS_SCALE);
-            droneState.velocity.add(thrustForce);
-            droneState.motorSpeeds = [3000, 3000, 3000, 3000];
-            hasInput = true;
+            // Smoothly rotate the drone to face mouse position
+            droneState.rotation.x = targetRotationX;
+            droneState.rotation.y = targetRotationY;
+            
+            // Allow some banking for more dynamic movement
+            droneState.rotation.z = -droneState.mouseX * 0.5;  // Bank slightly in turns
+            
+            // W key controls throttle in beginner mode - moves in direction of crosshair
+            if (keys.w) {
+                const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier;
+                droneState.motorThrusts = [thrustPerMotor, thrustPerMotor, thrustPerMotor, thrustPerMotor];
+                droneState.totalThrust = thrustPerMotor * 4;
+                
+                const direction = new THREE.Vector3(0, 0, -1);
+                direction.applyEuler(droneState.rotation);
+                const thrustForce = direction.multiplyScalar(droneState.totalThrust * PHYSICS_SCALE);
+                droneState.velocity.add(thrustForce);
+                droneState.motorSpeeds = [3000, 3000, 3000, 3000];
+                hasInput = true;
+            }
+        } else {
+            // Normal mode controls
+            if (keys.w) {
+                const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
+                droneState.motorThrusts[0] += thrustPerMotor;
+                droneState.motorThrusts[1] += thrustPerMotor;
+                droneState.velocity.z -= Math.cos(droneState.rotation.y) * thrustPerMotor * PHYSICS_SCALE;
+                droneState.motorSpeeds[0] += 1500;
+                droneState.motorSpeeds[1] += 1500;
+                hasInput = true;
+            }
+            if (keys.s) {
+                const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
+                droneState.motorThrusts[2] += thrustPerMotor;
+                droneState.motorThrusts[3] += thrustPerMotor;
+                droneState.velocity.z += Math.cos(droneState.rotation.y) * thrustPerMotor * PHYSICS_SCALE;
+                droneState.motorSpeeds[2] += 1500;
+                droneState.motorSpeeds[3] += 1500;
+                hasInput = true;
+            }
+            if (keys.a) {
+                const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.3;
+                droneState.motorThrusts[1] += thrustPerMotor;
+                droneState.motorThrusts[3] += thrustPerMotor;
+                droneState.velocity.x -= thrustPerMotor * PHYSICS_SCALE;
+                droneState.motorSpeeds[1] += 1000;
+                droneState.motorSpeeds[3] += 1000;
+                hasInput = true;
+            }
+            if (keys.d) {
+                const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.3;
+                droneState.motorThrusts[0] += thrustPerMotor;
+                droneState.motorThrusts[2] += thrustPerMotor;
+                droneState.velocity.x += thrustPerMotor * PHYSICS_SCALE;
+                droneState.motorSpeeds[0] += 1000;
+                droneState.motorSpeeds[2] += 1000;
+                hasInput = true;
+            }
+            if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
+            if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
         }
-    } else {
-        // Normal mode controls
-        if (keys.w) {
-            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
-            droneState.motorThrusts[0] += thrustPerMotor;
-            droneState.motorThrusts[1] += thrustPerMotor;
-            droneState.velocity.z -= Math.cos(droneState.rotation.y) * thrustPerMotor * PHYSICS_SCALE;
-            droneState.motorSpeeds[0] += 1500;
-            droneState.motorSpeeds[1] += 1500;
-            hasInput = true;
-        }
-        if (keys.s) {
-            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
-            droneState.motorThrusts[2] += thrustPerMotor;
-            droneState.motorThrusts[3] += thrustPerMotor;
-            droneState.velocity.z += Math.cos(droneState.rotation.y) * thrustPerMotor * PHYSICS_SCALE;
-            droneState.motorSpeeds[2] += 1500;
-            droneState.motorSpeeds[3] += 1500;
-            hasInput = true;
-        }
-        if (keys.a) {
-            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.3;
-            droneState.motorThrusts[1] += thrustPerMotor;
-            droneState.motorThrusts[3] += thrustPerMotor;
-            droneState.velocity.x -= thrustPerMotor * PHYSICS_SCALE;
-            droneState.motorSpeeds[1] += 1000;
-            droneState.motorSpeeds[3] += 1000;
-            hasInput = true;
-        }
-        if (keys.d) {
-            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier * 0.3;
-            droneState.motorThrusts[0] += thrustPerMotor;
-            droneState.motorThrusts[2] += thrustPerMotor;
-            droneState.velocity.x += thrustPerMotor * PHYSICS_SCALE;
-            droneState.motorSpeeds[0] += 1000;
-            droneState.motorSpeeds[2] += 1000;
-            hasInput = true;
-        }
-        if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
-        if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
-    }
 
-    // Vertical controls work the same in both modes
-    if (keys.Space) {
-        const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier;
-        droneState.motorThrusts = droneState.motorThrusts.map(thrust => thrust + thrustPerMotor);
-        droneState.velocity.y += thrustPerMotor * 4 * PHYSICS_SCALE;
-        droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);
-        hasInput = true;
+        // Vertical controls work the same in both modes
+        if (keys.Space) {
+            const thrustPerMotor = BASE_MOTOR_THRUST * thrustMultiplier;
+            droneState.motorThrusts = droneState.motorThrusts.map(thrust => thrust + thrustPerMotor);
+            droneState.velocity.y += thrustPerMotor * 4 * PHYSICS_SCALE;
+            droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);
+            hasInput = true;
+        }
+        if (keys.Shift) {
+            const thrustReduction = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
+            droneState.velocity.y -= thrustReduction * PHYSICS_SCALE;
+            droneState.motorSpeeds = droneState.motorSpeeds.map(speed => Math.max(0, speed - 1000));
+            hasInput = true;
+        }
+        
+        // Calculate total thrust from all motors
+        droneState.totalThrust = droneState.motorThrusts.reduce((sum, thrust) => sum + thrust, 0);
     }
-    if (keys.Shift) {
-        const thrustReduction = BASE_MOTOR_THRUST * thrustMultiplier * 0.5;
-        droneState.velocity.y -= thrustReduction * PHYSICS_SCALE;
-        droneState.motorSpeeds = droneState.motorSpeeds.map(speed => Math.max(0, speed - 1000));
-        hasInput = true;
-    }
-    
-    // Calculate total thrust from all motors
-    droneState.totalThrust = droneState.motorThrusts.reduce((sum, thrust) => sum + thrust, 0);
     
     // Calculate battery drain based on motor usage
     // Calculate normalized motor load (0 = no thrust, 1 = max possible thrust)

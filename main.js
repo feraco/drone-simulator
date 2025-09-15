@@ -37,7 +37,7 @@ const droneState = {
     windSpeed: new THREE.Vector3(0, 0, 0),
     gForce: new THREE.Vector3(0, 0, 0),
     angularVelocity: new THREE.Vector3(0, 0, 0),
-    weight: 19.6 // Weight in Newtons (mass * gravity = 2kg * 9.8m/s²)
+    weight: 19.6, // Weight in Newtons (mass * gravity = 2kg * 9.8m/s²)
     hoverMode: false,
     batteryLevel: 100, // percentage
     batteryDrainRate: 0.01, // base drain per frame

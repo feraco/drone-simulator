@@ -547,8 +547,14 @@ function animate() {
     droneState.totalThrust = droneState.motorThrusts.reduce((sum, thrust) => sum + thrust, 0);
     
     // Calculate battery drain based on motor usage
-    droneState.motorLoad = droneState.totalThrust / (BASE_MOTOR_THRUST * 4); // Normalized load (0-1)
-    const batteryDrain = droneState.batteryDrainRate * (1 + droneState.motorLoad * 2); // More thrust = more drain
+    // Calculate normalized motor load (0 = no thrust, 1 = max possible thrust)
+    const maxPossibleThrust = droneState.maxThrustPerMotor * 4 * thrustMultiplier; // 32N * multiplier
+    droneState.motorLoad = Math.min(droneState.totalThrust / maxPossibleThrust, 1.0);
+    
+    // Dynamic battery drain: base drain + exponential increase with thrust
+    // At 0% thrust: minimal drain, At 100% thrust: 10x drain rate
+    const thrustMultiplierEffect = 1 + (droneState.motorLoad * droneState.motorLoad * 9); // Quadratic scaling
+    const batteryDrain = droneState.batteryDrainRate * thrustMultiplierEffect;
     droneState.batteryLevel = Math.max(0, droneState.batteryLevel - batteryDrain);
     
     // If battery is dead, disable all thrust

@@ -579,7 +579,7 @@ function animate() {
    
     // Auto-hover: Apply counter-gravity thrust when no input
     if (!hasInput && droneState.position.y > GROUND_LEVEL + 1) {
-        droneState.velocity.y += droneState.hoverThrust;
+        droneState.velocity.y += GRAVITY.y * -1; // Exactly counteract gravity
         droneState.currentThrust += droneState.hoverThrust;
         droneState.motorSpeeds = [2000, 2000, 2000, 2000]; // Hover RPM
     }

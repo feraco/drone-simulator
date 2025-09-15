@@ -449,8 +449,15 @@ function animate() {
     droneState.motorSpeeds = [0, 0, 0, 0];
     droneState.totalThrust = 0;
 
-    // Calculate required hover thrust (thrust needed to counteract weight)
-    const hoverThrustRequired = droneState.weight; // 19.6N to counteract 19.6N weight
+    // Apply hover mode first (before other controls)
+    if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
+        const hoverThrustPerMotor = droneState.weight / 4; // 4.9N per motor
+        droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
+        droneState.totalThrust = droneState.weight;
+        droneState.velocity.y += droneState.weight * PHYSICS_SCALE;
+        droneState.motorSpeeds = [2000, 2000, 2000, 2000];
+    }
+
     let hasInput = false;
 
     // Update drone physics based on mode
@@ -659,16 +666,6 @@ function animate() {
   
   
    
-    // Auto-hover: Apply hover thrust when no input (realistic physics)
-    if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
-        const hoverThrustPerMotor = hoverThrustRequired / 4; // Distribute across 4 motors
-        droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
-        droneState.totalThrust = hoverThrustRequired;
-        droneState.velocity.y += hoverThrustRequired * PHYSICS_SCALE;
-        droneState.motorSpeeds = [2000, 2000, 2000, 2000];
-    }
-    
-
     // Check for ring collisions and update timer
     rings.forEach((ring, i) => {
         if (ring.visible) {  // Only check visible rings

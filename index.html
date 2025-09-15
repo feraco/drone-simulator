@@ -280,6 +280,13 @@
             </div>
         </div>
         <div class="hud-section">
+            <h4>System</h4>
+            <div class="hud-value">
+                <span class="hud-label">Battery:</span>
+                <span class="hud-number" id="battery">100.0%</span>
+            </div>
+        </div>
+        <div class="hud-section">
             <h4>Motors</h4>
             <div class="hud-value">
                 <span class="hud-label">M1:</span>
@@ -314,9 +321,11 @@
     </div>
     <div id="timer">Time: 0.0s</div>
     <div id="mode-display">Normal Mode</div>
+    <div id="hover-display" style="position: fixed; top: 80px; left: 20px; background: rgba(0, 0, 0, 0.7); color: white; padding: 15px; border-radius: 5px; font-family: Arial, sans-serif; font-size: 18px;">Hover: OFF</div>
     <div id="controls">
         <h3>Controls:</h3>
         <p>Press B to toggle Beginner Mode</p>
+        <p>Press H to toggle Hover Mode</p>
         <p><strong>Normal Mode:</strong></p>
         <p>W/S - Forward/Backward</p>
         <p>A/D - Move Left/Right</p>
@@ -333,6 +342,11 @@
         <p>Max Thrust: 8N per motor (32N total)</p>
         <p>Hover Thrust Required: 19.6N</p>
         <p>Thrust > Weight = Climb</p>
+        <p><strong>Battery System:</strong></p>
+        <p>Drains based on motor usage</p>
+        <p>At 0% battery = No thrust = Fall</p>
+        <p><strong>Hover Mode (H key):</strong></p>
+        <p>Automatically maintains altitude</p>
     </div>
     <script>
         window.onerror = function(msg, url, line, col, error) {

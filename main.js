@@ -38,6 +38,10 @@ const droneState = {
     gForce: new THREE.Vector3(0, 0, 0),
     angularVelocity: new THREE.Vector3(0, 0, 0),
     weight: 19.6 // Weight in Newtons (mass * gravity = 2kg * 9.8m/s²)
+    hoverMode: false,
+    batteryLevel: 100, // percentage
+    batteryDrainRate: 0.01, // base drain per frame
+    motorLoad: 0 // current motor load for battery calculation
 };
 
 // Mouse lock and movement handling
@@ -289,6 +293,12 @@ window.addEventListener('keydown', (e) => {
         document.getElementById('mode-display').textContent = 
             droneState.beginnerMode ? 'Beginner Mode' : 'Normal Mode';
     }
+    if (e.key.toLowerCase() === 'h') {
+        droneState.hoverMode = !droneState.hoverMode;
+        // Update hover mode display
+        document.getElementById('hover-display').textContent = 
+            droneState.hoverMode ? 'Hover: ON' : 'Hover: OFF';
+    }
 });
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space') {
@@ -415,6 +425,19 @@ function updatePhysicsHUD() {
     } else {
         thrustElement.className = 'hud-number danger'; // Danger - will fall
     }
+    
+    // Update battery level
+    document.getElementById('battery').textContent = droneState.batteryLevel.toFixed(1) + '%';
+    
+    // Color code battery level
+    const batteryElement = document.getElementById('battery');
+    if (droneState.batteryLevel < 10) {
+        batteryElement.className = 'hud-number danger';
+    } else if (droneState.batteryLevel < 25) {
+        batteryElement.className = 'hud-number warning';
+    } else {
+        batteryElement.className = 'hud-number';
+    }
 }
 
 // Animation loop
@@ -515,6 +538,18 @@ function animate() {
     
     // Calculate total thrust from all motors
     droneState.totalThrust = droneState.motorThrusts.reduce((sum, thrust) => sum + thrust, 0);
+    
+    // Calculate battery drain based on motor usage
+    droneState.motorLoad = droneState.totalThrust / (BASE_MOTOR_THRUST * 4); // Normalized load (0-1)
+    const batteryDrain = droneState.batteryDrainRate * (1 + droneState.motorLoad * 2); // More thrust = more drain
+    droneState.batteryLevel = Math.max(0, droneState.batteryLevel - batteryDrain);
+    
+    // If battery is dead, disable all thrust
+    if (droneState.batteryLevel <= 0) {
+        droneState.motorThrusts = [0, 0, 0, 0];
+        droneState.totalThrust = 0;
+        droneState.motorSpeeds = [0, 0, 0, 0];
+    }
     
     // Apply gravity
     const gravityForce = new THREE.Vector3(0, -droneState.weight * PHYSICS_SCALE, 0);
@@ -625,7 +660,7 @@ function animate() {
   
    
     // Auto-hover: Apply hover thrust when no input (realistic physics)
-    if (!hasInput && droneState.position.y > GROUND_LEVEL + 1) {
+    if ((!hasInput || droneState.hoverMode) && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
         const hoverThrustPerMotor = hoverThrustRequired / 4; // Distribute across 4 motors
         droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
         droneState.totalThrust = hoverThrustRequired;

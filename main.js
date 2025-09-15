@@ -40,7 +40,7 @@ const droneState = {
     weight: 19.6, // Weight in Newtons (mass * gravity = 2kg * 9.8m/s²)
     hoverMode: false,
     batteryLevel: 100, // percentage
-    batteryDrainRate: 0.01, // base drain per frame
+    batteryDrainRate: 0.001, // base drain per frame (reduced by 10x)
     motorLoad: 0 // current motor load for battery calculation
 };
 
@@ -660,7 +660,7 @@ function animate() {
   
    
     // Auto-hover: Apply hover thrust when no input (realistic physics)
-    if ((!hasInput || droneState.hoverMode) && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
+    if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1 && droneState.batteryLevel > 0) {
         const hoverThrustPerMotor = hoverThrustRequired / 4; // Distribute across 4 motors
         droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
         droneState.totalThrust = hoverThrustRequired;

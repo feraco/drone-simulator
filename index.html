@@ -279,6 +279,25 @@
                 <span class="hud-number" id="weight">19.6 N</span>
             </div>
         </div>
+        <div class="hud-section">
+            <h4>Motors</h4>
+            <div class="hud-value">
+                <span class="hud-label">M1:</span>
+                <span class="hud-number" id="motor1-thrust">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">M2:</span>
+                <span class="hud-number" id="motor2-thrust">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">M3:</span>
+                <span class="hud-number" id="motor3-thrust">0.0 N</span>
+            </div>
+            <div class="hud-value">
+                <span class="hud-label">M4:</span>
+                <span class="hud-number" id="motor4-thrust">0.0 N</span>
+            </div>
+        </div>
     </div>
     <div id="attitude-indicator">
         <div id="horizon-line"></div>
@@ -310,8 +329,10 @@
         <p>Space - Up</p>
         <p>Shift - Down</p>
         <p><strong>Physics:</strong></p>
-        <p>Mass: 2kg | Gravity: 9.8m/s²</p>
-        <p>Max Thrust: 30N per motor</p>
+        <p>Mass: 2kg | Weight: 19.6N</p>
+        <p>Max Thrust: 8N per motor (32N total)</p>
+        <p>Hover Thrust Required: 19.6N</p>
+        <p>Thrust > Weight = Climb</p>
     </div>
     <script>
         window.onerror = function(msg, url, line, col, error) {

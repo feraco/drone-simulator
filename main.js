@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 // Scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xADD8E6); // Light blue sky background
+scene.background = new THREE.Color(0x87CEEB); // Sky blue background
 
 // Add fog for depth perception
-scene.fog = new THREE.FogExp2(0xADD8E6, 0.01);
+scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });

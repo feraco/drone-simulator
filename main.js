@@ -271,12 +271,16 @@ const keys = {
     ArrowDown: false,
     ArrowLeft: false,
     ArrowRight: false,
-    ' ': false,
+    Space: false,
     Shift: false
 };
 
 window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
+    if (e.code === 'Space') {
+        keys.Space = true;
+    } else {
+        keys[e.key] = true;
+    }
     if (e.key.toLowerCase() === 'b') {
         droneState.beginnerMode = !droneState.beginnerMode;
         // Reset velocities when switching modes
@@ -286,7 +290,13 @@ window.addEventListener('keydown', (e) => {
             droneState.beginnerMode ? 'Beginner Mode' : 'Normal Mode';
     }
 });
-window.addEventListener('keyup', (e) => keys[e.key] = false);
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+        keys.Space = false;
+    } else {
+        keys[e.key] = false;
+    }
+});
 
 // Physics constants
 const THRUST = 0.02;
@@ -448,7 +458,7 @@ function animate() {
     }
 
     // Vertical controls work the same in both modes
-    if (keys[' ']) {
+    if (keys.Space) {
         droneState.velocity.y += THRUST;
         droneState.currentThrust += THRUST;
         droneState.motorSpeeds = droneState.motorSpeeds.map(speed => speed + 2000);

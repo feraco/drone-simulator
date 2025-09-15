@@ -160,7 +160,7 @@ let trailIndex = 0;
 // Create environment
 const groundGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
 const groundMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0x1a472a,
+    color: 0x8B4513,
     wireframe: false,
     side: THREE.DoubleSide,
     shininess: 10,

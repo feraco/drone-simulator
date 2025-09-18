@@ -530,8 +530,8 @@ function animate() {
             }
             if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
             if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
-            if (keys.ArrowLeft) droneState.rotationVelocity.y -= ROTATION_SPEED;
-            if (keys.ArrowRight) droneState.rotationVelocity.y += ROTATION_SPEED;
+            if (keys.j) droneState.rotationVelocity.y -= ROTATION_SPEED;
+            if (keys.l) droneState.rotationVelocity.y += ROTATION_SPEED;
             if (keys.q) droneState.rotationVelocity.z -= ROTATION_SPEED;
             if (keys.e) droneState.rotationVelocity.z += ROTATION_SPEED;
         }

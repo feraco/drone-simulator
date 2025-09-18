@@ -276,7 +276,9 @@ const keys = {
     ArrowLeft: false,
     ArrowRight: false,
     Space: false,
-    Shift: false
+    Shift: false,
+    q: false,
+    e: false
 };
 
 window.addEventListener('keydown', (e) => {
@@ -528,6 +530,10 @@ function animate() {
             }
             if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
             if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
+            if (keys.ArrowLeft) droneState.rotationVelocity.y -= ROTATION_SPEED;
+            if (keys.ArrowRight) droneState.rotationVelocity.y += ROTATION_SPEED;
+            if (keys.q) droneState.rotationVelocity.z -= ROTATION_SPEED;
+            if (keys.e) droneState.rotationVelocity.z += ROTATION_SPEED;
         }
 
         // Vertical controls work the same in both modes

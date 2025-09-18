@@ -278,7 +278,9 @@ const keys = {
     Space: false,
     Shift: false,
     q: false,
-    e: false
+    e: false,
+    j: false,
+    l: false
 };
 
 window.addEventListener('keydown', (e) => {
@@ -288,6 +290,15 @@ window.addEventListener('keydown', (e) => {
         keys[e.key] = true;
         keys[e.key.toLowerCase()] = true; // Also store lowercase version
     }
+    
+    // Explicitly handle J and L keys
+    if (e.key === 'j' || e.key === 'J') {
+        keys.j = true;
+    }
+    if (e.key === 'l' || e.key === 'L') {
+        keys.l = true;
+    }
+    
     if (e.key.toLowerCase() === 'b') {
         droneState.beginnerMode = !droneState.beginnerMode;
         // Reset velocities when switching modes
@@ -309,6 +320,14 @@ window.addEventListener('keyup', (e) => {
     } else {
         keys[e.key] = false;
         keys[e.key.toLowerCase()] = false; // Also clear lowercase version
+    }
+    
+    // Explicitly handle J and L keys
+    if (e.key === 'j' || e.key === 'J') {
+        keys.j = false;
+    }
+    if (e.key === 'l' || e.key === 'L') {
+        keys.l = false;
     }
 });
 
@@ -532,8 +551,8 @@ function animate() {
             }
             if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
             if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
-            if (keys.j || keys.J) droneState.rotationVelocity.y -= ROTATION_SPEED;
-            if (keys.l || keys.L) droneState.rotationVelocity.y += ROTATION_SPEED;
+            if (keys.j) droneState.rotationVelocity.y -= ROTATION_SPEED;
+            if (keys.l) droneState.rotationVelocity.y += ROTATION_SPEED;
             if (keys.q) droneState.rotationVelocity.z -= ROTATION_SPEED;
             if (keys.e) droneState.rotationVelocity.z += ROTATION_SPEED;
         }

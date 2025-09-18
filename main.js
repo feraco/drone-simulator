@@ -286,6 +286,7 @@ window.addEventListener('keydown', (e) => {
         keys.Space = true;
     } else {
         keys[e.key] = true;
+        keys[e.key.toLowerCase()] = true; // Also store lowercase version
     }
     if (e.key.toLowerCase() === 'b') {
         droneState.beginnerMode = !droneState.beginnerMode;
@@ -307,6 +308,7 @@ window.addEventListener('keyup', (e) => {
         keys.Space = false;
     } else {
         keys[e.key] = false;
+        keys[e.key.toLowerCase()] = false; // Also clear lowercase version
     }
 });
 
@@ -457,9 +459,9 @@ function animate() {
         if (droneState.hoverMode && droneState.position.y > GROUND_LEVEL + 1) {
             const hoverThrustPerMotor = droneState.weight / 4; // 4.9N per motor
             droneState.motorThrusts = [hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor, hoverThrustPerMotor];
-            droneState.totalThrust = droneState.weight;
-            droneState.velocity.y += droneState.weight * PHYSICS_SCALE;
             droneState.motorSpeeds = [2000, 2000, 2000, 2000];
+            // Apply upward force to counteract gravity
+            droneState.velocity.y += droneState.weight * PHYSICS_SCALE;
         }
 
         let hasInput = false;
@@ -530,8 +532,8 @@ function animate() {
             }
             if (keys.ArrowUp) droneState.rotationVelocity.x -= ROTATION_SPEED;
             if (keys.ArrowDown) droneState.rotationVelocity.x += ROTATION_SPEED;
-            if (keys.j) droneState.rotationVelocity.y -= ROTATION_SPEED;
-            if (keys.l) droneState.rotationVelocity.y += ROTATION_SPEED;
+            if (keys.j || keys.J) droneState.rotationVelocity.y -= ROTATION_SPEED;
+            if (keys.l || keys.L) droneState.rotationVelocity.y += ROTATION_SPEED;
             if (keys.q) droneState.rotationVelocity.z -= ROTATION_SPEED;
             if (keys.e) droneState.rotationVelocity.z += ROTATION_SPEED;
         }

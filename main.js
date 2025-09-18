@@ -650,8 +650,12 @@ function animate() {
 
     // Apply physics
     droneState.position.add(droneState.velocity);
+    
+    // Apply rotation velocities to actual rotation (but not in beginner mode for Y rotation)
     droneState.rotation.x += droneState.rotationVelocity.x;
-    droneState.rotation.y += droneState.rotationVelocity.y;
+    if (!droneState.beginnerMode) {
+        droneState.rotation.y += droneState.rotationVelocity.y;
+    }
     droneState.rotation.z += droneState.rotationVelocity.z;
 
     // Apply drag and handle no input
